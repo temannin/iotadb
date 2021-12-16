@@ -1,5 +1,5 @@
-use std::io::{Error, Read, Write};
-use std::net::{Shutdown, TcpListener, TcpStream};
+use std::io::{Error, Write};
+use std::net::{TcpListener, TcpStream};
 use std::thread;
 
 fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
