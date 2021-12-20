@@ -1,12 +1,18 @@
+use std::fs::File;
 use std::io::{Error, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::str;
 use std::thread;
 
-use simple_logger::SimpleLogger;
+use argparse::{ArgumentParser, Store, StoreTrue};
+
+#[macro_use]
+extern crate log;
+extern crate simplelog;
+use simplelog::*;
 
 fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
-    log::info!("Connection from {}", stream.peer_addr()?);
+    info!("Connection from {}", stream.peer_addr()?);
     loop {
         let mut buffer = [0; 4096];
         let nbytes = stream.read(&mut buffer)?;
@@ -20,38 +26,64 @@ fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
 
-        log::trace!("The client sent: {}", s);
+        trace!("The client sent: {}", s);
 
         stream.write("Hello client!".as_bytes())?;
         stream.flush()?;
     }
 }
 
-fn main() {
-    SimpleLogger::new().init().unwrap();
+fn set_logger(log_path: String) {
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            LevelFilter::Trace,
+            Config::default(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ),
+        WriteLogger::new(
+            LevelFilter::Info,
+            Config::default(),
+            File::create(".log").unwrap(),
+        ),
+    ])
+    .unwrap();
+
+    let mut ap = ArgumentParser::new();
+    ap.set_description(
+        "iotadb. A completely open-source database that prioritizes safety over anything else. Learn more at: https://github.com/temannin/iotadb",
+    );
+    ap.parse_args_or_exit();
+}
+
+fn start_network() {
     let listener = TcpListener::bind("0.0.0.0:3306").unwrap();
     // accept connections and process them, spawning a new thread for each one
-    log::info!("Server listening on port 3306");
+    info!("Server listening on port 3306");
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                log::info!("New connection: {}", stream.peer_addr().unwrap());
+                info!("New connection: {}", stream.peer_addr().unwrap());
                 thread::spawn(move || {
                     let result = handle_client(stream);
                     match result {
                         Ok(()) => {
-                            log::info!("Connection closed.")
+                            info!("Connection closed.")
                         }
                         Err(err) => {
-                            log::error!("Error: {}", err)
+                            error!("Error: {}", err)
                         }
                     }
                 });
             }
             Err(e) => {
-                log::error!("Error: {}", e);
+                error!("Error: {}", e);
             }
         }
     }
-    drop(listener);
+}
+
+fn main() {
+    set_logger();
+    start_network();
 }
