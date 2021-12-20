@@ -1,12 +1,32 @@
-use std::io::{Error, Write};
+use std::io::{Error, Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::str;
 use std::thread;
 
 fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
     println!("Connection from {}", stream.peer_addr()?);
-    let mut buf: &[u8] = &[74, 0, 0, 1];
-    stream.write(buf)?;
-    return Ok(());
+
+    let mut buffer = [0; 8192];
+    loop {
+        let nbytes = stream.read(&mut buffer)?;
+
+        if nbytes == 0 {
+            return Ok(());
+        }
+
+        let s = match str::from_utf8(&buffer) {
+            Ok(v) => v,
+            Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+        };
+
+        println!("{}", s);
+
+        for i in 0..nbytes {
+            print!("{}", buffer[i]);
+        }
+        stream.write(&buffer[..nbytes])?;
+        stream.flush()?;
+    }
 }
 
 fn main() {
@@ -29,5 +49,6 @@ fn main() {
         }
     }
     // close the socket server
+    println!("Dropping");
     drop(listener);
 }

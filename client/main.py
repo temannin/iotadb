@@ -1,4 +1,11 @@
-import mysql.connector
+import socket
 
-con = mysql.connector.connect(user='root', password='password1',
-                              host='127.0.0.1')
+HOST = '127.0.0.1'  # The server's hostname or IP address
+PORT = 3306        # The port used by the server
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.connect((HOST, PORT))
+    s.sendall(b'Hello, world')
+    part = s.recv(1024)
+
+print('Received', repr(part))
