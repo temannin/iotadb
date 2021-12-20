@@ -3,10 +3,11 @@ use std::net::{TcpListener, TcpStream};
 use std::str;
 use std::thread;
 
+use simple_logger::SimpleLogger;
+
 fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
-    println!("Connection from {}", stream.peer_addr()?);
+    log::info!("Connection from {}", stream.peer_addr()?);
     loop {
-        println!("Starting loop");
         let mut buffer = [0; 4096];
         let nbytes = stream.read(&mut buffer)?;
 
@@ -19,7 +20,7 @@ fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
 
-        println!("The client sent: {}", s);
+        log::trace!("The client sent: {}", s);
 
         stream.write("Hello client!".as_bytes())?;
         stream.flush()?;
@@ -27,26 +28,30 @@ fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
 }
 
 fn main() {
+    SimpleLogger::new().init().unwrap();
     let listener = TcpListener::bind("0.0.0.0:3306").unwrap();
     // accept connections and process them, spawning a new thread for each one
-    println!("Server listening on port 3306");
+    log::info!("Server listening on port 3306");
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                println!("New connection: {}", stream.peer_addr().unwrap());
+                log::info!("New connection: {}", stream.peer_addr().unwrap());
                 thread::spawn(move || {
-                    // connection succeeded
-                    let f = handle_client(stream);
-                    println!("{:?}", f);
+                    let result = handle_client(stream);
+                    match result {
+                        Ok(()) => {
+                            log::info!("Connection closed.")
+                        }
+                        Err(err) => {
+                            log::error!("Error: {}", err)
+                        }
+                    }
                 });
             }
             Err(e) => {
-                println!("Error: {}", e);
-                /* connection failed */
+                log::error!("Error: {}", e);
             }
         }
     }
-    // close the socket server
-    println!("Dropping");
     drop(listener);
 }
