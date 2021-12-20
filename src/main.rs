@@ -5,9 +5,9 @@ use std::thread;
 
 fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
     println!("Connection from {}", stream.peer_addr()?);
-
-    let mut buffer = [0; 8192];
     loop {
+        println!("Starting loop");
+        let mut buffer = [0; 4096];
         let nbytes = stream.read(&mut buffer)?;
 
         if nbytes == 0 {
@@ -19,12 +19,9 @@ fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
             Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
         };
 
-        println!("{}", s);
+        println!("The client sent: {}", s);
 
-        for i in 0..nbytes {
-            print!("{}", buffer[i]);
-        }
-        stream.write(&buffer[..nbytes])?;
+        stream.write("Hello client!".as_bytes())?;
         stream.flush()?;
     }
 }
@@ -39,7 +36,8 @@ fn main() {
                 println!("New connection: {}", stream.peer_addr().unwrap());
                 thread::spawn(move || {
                     // connection succeeded
-                    handle_client(stream)
+                    let f = handle_client(stream);
+                    println!("{:?}", f);
                 });
             }
             Err(e) => {
