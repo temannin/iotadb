@@ -11,8 +11,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         counter = counter + 1
         s.sendall(b"Hello, server!")
         part = s.recv(4096)
-        time.sleep(5)
+        time.sleep(0.25)
         print("Received", repr(part))
         if counter > 2:
             break
+    print("Closing connection to server.")
     s.close()
