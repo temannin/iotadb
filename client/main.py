@@ -9,7 +9,10 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     counter = 0
     while True:
         counter = counter + 1
-        s.sendall(b"Hello, server!")
+
+        command = input("iotadb> ")
+
+        s.sendall(str.encode(command))
         part = s.recv(4096)
         time.sleep(0.25)
         print("Received", repr(part))
