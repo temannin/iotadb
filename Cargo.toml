@@ -1,3 +1,5 @@
+cargo-features = ["edition2021"]
+
 [package]
 name = "iotadb"
 version = "0.1.0"
@@ -7,5 +9,4 @@ edition = "2018"
 log = "0.4.14"
 simplelog = "0.11.1"
 argparse = "0.2.2"
-
-
+sqlparser = "0.13.0"
