@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use argparse::{ArgumentParser, Store, StoreTrue};
+use argparse::ArgumentParser;
 
 #[macro_use]
 extern crate log;
@@ -8,20 +8,29 @@ extern crate simplelog;
 use simplelog::*;
 
 fn set_logger(log_path: String) {
-    CombinedLogger::init(vec![
-        TermLogger::new(
-            LevelFilter::Trace,
-            Config::default(),
-            TerminalMode::Mixed,
-            ColorChoice::Auto,
-        ),
-        WriteLogger::new(
+    if cfg!(debug_assertions) {
+        CombinedLogger::init(vec![
+            TermLogger::new(
+                LevelFilter::Trace,
+                Config::default(),
+                TerminalMode::Mixed,
+                ColorChoice::Auto,
+            ),
+            WriteLogger::new(
+                LevelFilter::Info,
+                Config::default(),
+                File::create(format!("{}.iota", log_path)).unwrap(),
+            ),
+        ])
+        .unwrap();
+    } else {
+        CombinedLogger::init(vec![WriteLogger::new(
             LevelFilter::Info,
             Config::default(),
             File::create(format!("{}.iota", log_path)).unwrap(),
-        ),
-    ])
-    .unwrap();
+        )])
+        .unwrap();
+    }
 
     let mut ap = ArgumentParser::new();
     ap.set_description(
