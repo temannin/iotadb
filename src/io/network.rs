@@ -3,7 +3,8 @@ use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::time::Instant;
 
-use sqlparser::dialect::GenericDialect;
+use sqlparser::ast::Statement;
+use sqlparser::dialect::MySqlDialect;
 use sqlparser::parser::Parser;
 
 pub fn start_network() {
@@ -42,7 +43,7 @@ fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
     let mut statement: String;
 
     // instantiate the dialect.
-    let dialect = GenericDialect {};
+    let dialect = MySqlDialect {};
 
     loop {
         let mut buffer = [0; 4096];
@@ -59,10 +60,14 @@ fn handle_client(mut stream: TcpStream) -> Result<(), Error> {
         };
 
         let ast = Parser::parse_sql(&dialect, &statement).unwrap();
-        info!("AST: {:?}", ast);
+        parse_statement(&ast);
 
         trace!("Query executed in {}ms", now.elapsed().as_millis());
         stream.write("Hello client!".as_bytes())?;
         stream.flush()?;
     }
+}
+
+fn parse_statement(ast: &Vec<Statement>) {
+    trace!("{:?}", &ast);
 }
